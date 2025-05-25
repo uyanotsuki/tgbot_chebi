@@ -4,8 +4,16 @@
 ## 📦 Установка
 1. Клонируйте репозиторий:
    ```bash
-    git clone https://github.com/your-username/legal-help-bot.git
-    cd legal-help-bot
+    git clone https://github.com/uyanotsuki/tgbot_chebi.git
+   
+### Рекомендуется использовать виртуальное окружение, чтобы изолировать зависимости проекта.
+Создайте виртуальное окружение:
+   ```bash
+   python -m venv .venv
+
+2. Активируйте виртуальное окружение:
+   ```bash
+   .venv\Scripts\activate
 
 3. Установите зависимости:
    pip install -r requirements.txt
@@ -27,26 +35,26 @@ legal-help-bot/
 - └── README.md
 
 
-###🗄️ База данных
+### 🗄️ База данных
 Используется встроенная база данных SQLite. Файл users.db создаётся автоматически с таблицей
 
 ### 🧰 Используемые библиотеки
-* aiofiles==24.1.0
-* aiogram==3.20.0.post0
-* aiohappyeyeballs==2.6.1
-* aiohttp==3.11.18
-* aiosignal==1.3.2
-* annotated-types==0.7.0
-* attrs==25.3.0
-* certifi==2025.4.26
-* frozenlist==1.6.0
-* idna==3.10
-* magic-filter==1.0.12
-* multidict==6.4.3
-* propcache==0.3.1
-* pydantic==2.11.4
-* pydantic_core==2.33.2
-* python-dotenv==1.1.0
-* typing-inspection==0.4.0
-* typing_extensions==4.13.2
-* yarl==1.20.0
+- aiofiles==24.1.0
+- aiogram==3.20.0.post0
+- aiohappyeyeballs==2.6.1
+- aiohttp==3.11.18
+- aiosignal==1.3.2
+- annotated-types==0.7.0
+- attrs==25.3.0
+- certifi==2025.4.26
+- frozenlist==1.6.0
+- idna==3.10
+- magic-filter==1.0.12
+- multidict==6.4.3
+- propcache==0.3.1
+- pydantic==2.11.4
+- pydantic_core==2.33.2
+- python-dotenv==1.1.0
+- typing-inspection==0.4.0
+- typing_extensions==4.13.2
+- yarl==1.20.0
