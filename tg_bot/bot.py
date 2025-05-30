@@ -18,7 +18,7 @@ main_menu_kb = ReplyKeyboardMarkup(
         [KeyboardButton(text="Куда можно обратиться за получением БЮП?")],
         [KeyboardButton(text="Как с нами связаться?")],
         [KeyboardButton(text="Часто задаваемые вопросы и ответы")],
-        [KeyboardButton(text="Анкетирование")],
+        # [KeyboardButton(text="Анкетирование")],
     ],
     resize_keyboard=True
 )
@@ -57,13 +57,12 @@ async def categories_handler(message: types.Message):
 
     # Показываем категории и меняем клавиатуру на кнопку "Вернуться"
     await message.answer(
-        "Категории граждан, которые имеют право на получение бесплатной юридической помощи.\n\n"
-        "Выберите категорию для подробной информации:",
+        "Категории граждан, которые имеют право на получение бесплатной юридической помощи.\n\n",
         reply_markup=back_to_main_kb  # заменяем клавиатуру на "Вернуться"
     )
     # Отправляем инлайн-кнопки с категориями отдельным сообщением (inline клавиатура не конфликтует с ReplyKeyboard)
     await message.answer(
-        "Категории:",
+        "Выберите одну из для подробной информации:",
         reply_markup=inline_kb
     )
 
