@@ -2,306 +2,147 @@ import asyncio
 import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.filters import CommandStart, StateFilter
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.context import FSMContext # для состояний FSM
-from dotenv import load_dotenv  # для контекста FSM
-from auth import cmd_start, process_name, process_phone, Form  # Импортируем из auth.py
-from start import start
-
+from aiogram.filters import CommandStart
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-
-# Подключаем обработчики авторизации
-dp.message.register(cmd_start, CommandStart())
-dp.message.register(process_name, StateFilter(Form.name))
-dp.message.register(process_phone, StateFilter(Form.phone))
-
-# 👇 словарь со списком юристов
-lawyers_schedule = {
-    "Консультирование в области семейного, трудового, гражданского и прочего права": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Юрист-консультант",
-            "name": "Иванова А.А.",
-            "time": "Пн 10:00, Пн 13:00, Ср 14:00", 
-            # "time": "5 Мая Пн 10:00, 5 Мая Пн 13:00, 7 Мая Ср 14:00", 
-            "address": "г. Чебоксары, ул. Гагарина, д. 12, подъезд 2"
-        },
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Юрист-аналитик",
-            "name": "Григорьев В.И.",
-            "time": "9 Мая Пт 13:00, 9 Мая Пт 15:00",
-            "address": "Проспект Мира, 3, подъезд 1"
-        }
-    ],
-    "Подготовка и подача исков, претензий, жалоб": [
-        {
-            "institution": "Московский районный суд",
-            "role": "Юрист по гражданским делам",
-            "name": "Смирнова Л.В.",
-            "time": "6 Мая Вт 09:00, 6 Мая Вт 14:45, 8 Мая Чт 10:00, 9 Мая Пт 13:30",
-            "address": "Улица Ленина, 45, подъезд 3"
-        },
-        {
-            "institution": "Московский районный суд",
-            "role": "Юрист по гражданским делам",
-            "name": "Алексеев И.М.",
-            "time": "16 Мая Ср 09:00, 17 Мая Чт 10:00, 18 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        },
-        {
-            "institution": "Московский районный суд",
-            "role": "Юрист по гражданским делам",
-            "name": "Демидова С.Н",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Сопровождение сделок с недвижимостью": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Юрист по недвижимости",
-            "name": "Кузнецова И.Г.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Решение наследственных споров и оформление наследства": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус",
-            "name": "Мельникова Т.Д.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        },
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Юрист по имущественным спорам",
-            "name": "Орлов А.С.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        },
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Юрист по правам собственности",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Защита авторских прав": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Обжалование решений суда": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Возврат водительских прав": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Жилищные вопросы": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Представление прав в исполнительном производстве": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Правовая экспертиза договоров": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Помощь в спорах с банками и в борьбе с коллекторами": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ],
-    "Получение гражданства и вида на жительство": [
-        {
-            "institution": "Центр правовой помощи Ленинского района",
-            "role": "Нотариус по вопросам авторского права",
-            "name": "Быков Т.О.",
-            "time": "5 Мая Пн 09:00, 7 Мая Ср 10:15, 9 Мая Пт 13:30",
-            "address": "Улица Октябрьская, 18, подъезд 5"
-        }
-    ]
-}
-
-# 👇 Меню с районами
-
-# 👇 Меню с видами юр. помощи
-services_kb = ReplyKeyboardMarkup(
+# Главное меню с кнопками
+main_menu_kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="Консультирование в области семейного, трудового, гражданского и прочего права")],
-        [KeyboardButton(text="Подготовка и подача исков, претензий, жалоб")],
-        [KeyboardButton(text="Сопровождение сделок с недвижимостью")],
-        [KeyboardButton(text="Решение наследственных споров и оформлениенаследства")],
-        [KeyboardButton(text="Защита авторских прав")],
-        [KeyboardButton(text="Обжалование решений суда")],
-        [KeyboardButton(text="Возврат водительских прав")],
-        [KeyboardButton(text="Жилищные вопросы")],
-        [KeyboardButton(text="Представление прав в исполнительном производстве")],
-        [KeyboardButton(text="Правовая экспертиза договоров")],
-        [KeyboardButton(text="Помощь в спорах с банками и в борьбе с коллекторами")],
-        [KeyboardButton(text="Получение гражданства и вида на жительство")]
+        [KeyboardButton(text="Кто имеет право на получение БЮП?")],
+        [KeyboardButton(text="Куда можно обратиться за получением БЮП?")],
+        [KeyboardButton(text="Как с нами связаться?")],
+        [KeyboardButton(text="Часто задаваемые вопросы и ответы")],
+        [KeyboardButton(text="Анкетирование")],
+    ],
+    resize_keyboard=True
+)
+
+# Клавиатура с кнопкой "Вернуться в главное меню"
+back_to_main_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="⬅️ ВЕРНУТЬСЯ В ГЛАВНОЕ МЕНЮ")]
     ],
     resize_keyboard=True
 )
 
 @dp.message(CommandStart())
-# async def start(message: types.Message):
-#     await message.answer("Добро пожаловать! ЮрПомощь Чебоксары — сервис для записи на приём в государственные учреждения. Выберите район Ваш проживания, чтобы продолжить: ", reply_markup=district_kb)
-
-@dp.message(lambda message: message.text in ["Калининский район", "Ленинский район", "Московский район", "Заволжское территориальное управление"])
-async def district_selected(message: types.Message):
+async def start(message: types.Message):
     await message.answer(
-        f"Ваш район: {message.text}\nТеперь выберите вид услуги:",
-        reply_markup=services_kb
+        "🌟 Здравствуйте! Вас приветствует чат-бот, который расскажет Вам об оказании бесплатной юридической помощи на территории Чувашской Республики!\n"
+        "Готов ответить на самые популярные вопросы.\n\n"
+        "Пожалуйста, выберите из меню интересующий Вас вопрос:",
+        reply_markup=main_menu_kb
     )
 
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+@dp.message(lambda m: m.text == "Кто имеет право на получение БЮП?")
+async def categories_handler(message: types.Message):
+    inline_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Инвалиды I и II группы", callback_data="category_invalidy")],
+        [InlineKeyboardButton(text="Малоимущие граждане", callback_data="category_maloimushhie")],
+        [InlineKeyboardButton(text="Многодетные семьи", callback_data="category_mnogodetnye")],
+        [InlineKeyboardButton(text="Участники СВО и их семьи", callback_data="category_svo")],
+        [InlineKeyboardButton(text="Дети-инвалиды, сироты", callback_data="category_deti")],
+        [InlineKeyboardButton(text="Ветераны ВОВ и боевых действий", callback_data="category_veterany")],
+        [InlineKeyboardButton(
+            text="Иные категории 👉",
+            url="https://minust.cap.ru/deyateljnostj/activity/besplatnaya-yuridicheskaya-pomoschj/kategorii-grazhdan-imeyuschih-pravo-na-poluchenie"
+        )],
+    ])
 
-@dp.message(lambda message: message.text in lawyers_schedule)
-async def service_selected(message: types.Message):
-    selected_service = message.text
-    schedule = lawyers_schedule[selected_service]
+    # Показываем категории и меняем клавиатуру на кнопку "Вернуться"
+    await message.answer(
+        "Категории граждан, которые имеют право на получение бесплатной юридической помощи.\n\n"
+        "Выберите категорию для подробной информации:",
+        reply_markup=back_to_main_kb  # заменяем клавиатуру на "Вернуться"
+    )
+    # Отправляем инлайн-кнопки с категориями отдельным сообщением (inline клавиатура не конфликтует с ReplyKeyboard)
+    await message.answer(
+        "Категории:",
+        reply_markup=inline_kb
+    )
 
-    institution = schedule[0].get("institution", "—")
+@dp.callback_query(lambda c: c.data and c.data.startswith('category_'))
+async def process_category_callback(callback_query: types.CallbackQuery):
+    inline_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="Перечень документов",
+            url="https://minust.cap.ru/deyateljnostj/activity/besplatnaya-yuridicheskaya-pomoschj/perechenj-dokumentov-na-osnovanii-kotorih-okazivae"
+        )]
+    ])
 
-    response = f"🏬 <b>Учреждение:</b> {institution}\n\n"
-    response += f"<b>Вы выбрали услугу:</b>\n{selected_service}\n\n"
-    response += "<b>Доступные сотрудники:</b>\n"
-
-    days_map = {
-        "Пн": "Понедельник",
-        "Вт": "Вторник",
-        "Ср": "Среда",
-        "Чт": "Четверг",
-        "Пт": "Пятница",
-        "Сб": "Суббота",
-        "Вс": "Воскресенье"
+    category_names = {
+        "category_invalidy": "Инвалиды I и II группы",
+        "category_maloimushhie": "Малоимущие граждане",
+        "category_mnogodetnye": "Многодетные семьи",
+        "category_svo": "Участники СВО и их семьи",
+        "category_deti": "Дети-инвалиды, сироты",
+        "category_veterany": "Ветераны ВОВ и боевых действий",
     }
 
-    builder = InlineKeyboardBuilder()  # обязательно создать экземпляр билдера
+    category = callback_query.data
+    category_name = category_names.get(category, "Категория")
 
-    for lawyer in schedule:
-        response += f"<b>Должность:</b> {lawyer.get('role', '—')}\n"
-        response += f"👩🏻‍💻 <b>{lawyer['name']}</b>\n"
-        response += f"<b>Время записи:</b>\n"
+    response_text = (
+        f"Информация по категории: {category_name}.\n\n"
+        "Для получения бесплатной юридической помощи гражданин или его представитель должен предоставить:\n\n"
+        "• *паспорт* или иной документ, удостоверяющий личность гражданина Российской Федерации\n"
+        "• *документы*, подтверждающие *отнесение его* к одной из категорий граждан\n\n"
+    )
 
-        time_slots = lawyer['time'].split(", ")
-        for slot in time_slots:
-            try:
-                day_code, hour = slot.strip().split(" ")
-                full_day = days_map.get(day_code, day_code)
-                response += f" 🕒 {full_day} - {hour}\n"
-                # match = re.match(r"(\d{1,2} [А-Яа-я]+) (\d{1,2}:\d{2})", slot.strip())
-                # if match:
-                #     day_code = match.group(1)
-                #     hour = match.group(2)
-                #     full_day = days_map.get(day_code.split()[1], day_code.split()[1])  # Переводим день
-                #     response += f" 🕒 {full_day} - {hour}\n"
-            except ValueError:
-                continue
+    await callback_query.answer()  # Убираем часы загрузки у кнопки
+    await callback_query.message.answer(response_text, reply_markup=inline_kb, parse_mode='Markdown')
 
-        response += "\n"
+@dp.message(lambda m: m.text == "Куда можно обратиться за получением БЮП?")
+async def where_to_go_handler(message: types.Message):
+    await message.answer(
+        "Бесплатная юридическая помощь оказывается в рамках государственной и негосударственной систем:\n\n"
+        "•  Адвокаты\n"
+        "•  КУ ЧР «Центр предоставления мер социальной поддержки» Минтруда Чувашии\n"
+        "•  Исполнительные органы Чувашской Республики и подведомственные им учреждения\n"
+        "•  Негосударственные центры бесплатной юридической помощи\n"
+        "•  Юридические клиники при ВУЗах\n"
+        "•  Социально ориентированные некоммерческие организации",
+        reply_markup=back_to_main_kb  #Вернуться
+    )
 
-        # кнопка с именем специалиста
-        builder.button(text=lawyer["name"], callback_data=f"choose_lawyer:{lawyer['name']}")
+@dp.message(lambda m: m.text == "Как с нами связаться?")
+async def contact_handler(message: types.Message):
+    await message.answer(
+        "📞 По всем возникающим вопросам можно позвонить в Госслужбу Чувашии по делам юстиции по номеру:\n\n"
+        "<a href='tel:+78352565112'>(88352) 56-51-12</a>",
+        reply_markup=back_to_main_kb,
+        parse_mode='HTML'
+    )
 
-    builder.adjust(1)  # по одной кнопке в ряд
+@dp.message(lambda m: m.text == "Часто задаваемые вопросы и ответы")
+async def faq_handler(message: types.Message):
+    await message.answer(
+        "Ответы на часто задаваемые вопросы:\n\n"
+        "👉 https://minust.cap.ru/deyateljnostj/activity/besplatnaya-yuridicheskaya-pomoschj/naibolee-chasto-zadavaemie-voprosi-grazhdan",
+        reply_markup=back_to_main_kb
+    )
 
-    await message.answer(response, parse_mode="HTML")
-    await message.answer("👩🏻‍💻Выберите специалиста:", reply_markup=builder.as_markup())
+@dp.message(lambda m: m.text == "Анкетирование")
+async def survey_handler(message: types.Message):
+    await message.answer(
+        "Спасибо, что решили пройти анкетирование!\n\n(тут может быть ссылка или встроенный опрос)",
+        reply_markup=back_to_main_kb
+    )
 
-@dp.callback_query(lambda c: c.data.startswith("choose_lawyer:"))
-async def choose_lawyer(callback: CallbackQuery):
-    name = callback.data.split(":")[1]
+@dp.message(lambda m: m.text == "⬅️ ВЕРНУТЬСЯ В ГЛАВНОЕ МЕНЮ")
+async def back_to_main_menu(message: types.Message):
+    await message.answer(
+        "Вы вернулись в главное меню. Выберите интересующий вас вопрос:",
+        reply_markup=main_menu_kb
+    )
 
-    for lawyers in lawyers_schedule.values():
-        for lawyer in lawyers:
-            if lawyer["name"] == name:
-                builder = InlineKeyboardBuilder()
-                for slot in lawyer['time'].split(", "):
-                    builder.button(text=slot, callback_data=f"choose_time:{name}:{slot}")
-                await callback.message.answer(
-                    f"📌 Специалист: <b>{name}</b>\nВыберите удобное для Вас время:",
-                    reply_markup=builder.as_markup(),
-                    parse_mode="HTML"
-                )
-                await callback.answer()
-                return
-    await callback.answer("Юрист не найден", show_alert=True)
-
-@dp.callback_query(lambda c: c.data.startswith("choose_time:"))
-async def choose_time(callback: CallbackQuery):
-    _, name, time_slot = callback.data.split(":", 2)
-    address = None  # Здесь будем хранить адрес юриста
-
-    for service, lawyers in lawyers_schedule.items():
-        for lawyer in lawyers:
-            if lawyer['name'] == name:
-                address = lawyer['address']
-                break
-        if address:
-            break
-
-    if address:
-        await callback.message.answer(
-            f"Вы успешно записаны к <b>{name}</b> на {time_slot}. ✅\n\n"
-            f"📍 Адрес: {address}",
-            parse_mode="HTML"
-        )
-    else:
-        await callback.message.answer("Ошибка❌ Юрист с таким именем не найден.")
-    await callback.answer("Запись подтверждена")
-    
-
-
+# Запуск
 async def main():
     print("Бот запущен и работает...")
     await dp.start_polling(bot)
