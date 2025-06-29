@@ -1,10 +1,10 @@
 import asyncio
 import os
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.filters import CommandStart
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from dotenv import load_dotenv
+from aiogram import Bot, Dispatcher, types # type: ignore
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton # type: ignore
+from aiogram.filters import CommandStart # type: ignore
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton # type: ignore
+from dotenv import load_dotenv # type: ignore
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
